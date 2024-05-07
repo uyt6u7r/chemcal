@@ -12,8 +12,9 @@
         <option value="M">M</option>
         <option value="mM">mM</option>
         <option value="μM">μM</option>
+        <option value="kDa">kDa</option> <!-- New unit of concentration -->
     </select><br>
-    Molar Mass (g/mol): <input type="number" id="molar_mass" step="any"><br>
+    Molar Mass (g/mol or kDa): <input type="number" id="molar_mass" step="any"><br>
     Volume: <input type="number" id="volume" step="any">
     <select id="volume_unit">
         <option value="L">L</option>
@@ -36,10 +37,15 @@
             return shifted / magnitude;
         }
 
-        function convertConcentrationToMoles(concentration, unit) {
+        function convertConcentrationToMoles(concentration, unit, molarMass) {
             if (unit === "M") return concentration;
             else if (unit === "mM") return concentration / 1000;
             else if (unit === "μM") return concentration / 1000000;
+            else if (unit === "kDa") { // Convert kDa to M using molar mass
+                // Assuming molar mass is given in kDa, convert kDa to g/mol
+                let molarMassInGrams = molarMass * 1000; // 1 kDa = 1000 g/mol
+                return concentration / molarMassInGrams;
+            }
         }
 
         function convertVolumeToLiters(volume, unit) {
@@ -55,16 +61,26 @@
             var volume = parseFloat(document.getElementById('volume').value);
             var volumeUnit = document.getElementById('volume_unit').value;
 
-            var moles = convertConcentrationToMoles(concentration, concentrationUnit);
+            var moles = convertConcentrationToMoles(concentration, concentrationUnit, molarMass);
             var liters = convertVolumeToLiters(volume, volumeUnit);
             var requiredMass = moles * molarMass * liters; // mass in grams
 
             document.getElementById('required_mass').innerText = toSignificantFigures(requiredMass, 3) + " g";
 
             var advice = "";
+            var stockConcentrationM = 1; // Default to 1 M stock solution
+            var stockMassNeeded = molarMass; // Mass in grams to prepare 1 L of 1 M solution
+            var stockVolumeNeeded = requiredMass / (stockConcentrationM * molarMass) * 1000; // volume in mL needed from a 1 M solution
+
+            // Adjust stock solution based on practicality
+            if (stockMassNeeded > 50 || stockVolumeNeeded < 0.01) {
+                stockConcentrationM = (stockMassNeeded > 50) ? 0.01 : 0.01; // Use 10 mM or 1 mM if 1 M is impractical
+                stockMassNeeded = stockConcentrationM * molarMass * 1000; // Recalculate mass needed for stock solution
+                stockVolumeNeeded = requiredMass / (stockConcentrationM * molarMass) * 1000; // Recalculate volume needed
+            }
+
             if (requiredMass < 0.01) {
-                var stockVolumeNeeded = requiredMass / (1 * molarMass) * 1000; // volume in mL needed from a 1 M solution
-                advice = `For precise measurement, prepare a 1 M stock solution by dissolving ${toSignificantFigures(molarMass, 3)} g of the chemical in enough water to make 1 L of solution. Then dilute ${toSignificantFigures(stockVolumeNeeded, 3)} mL of this stock solution into ${toSignificantFigures(liters * 1000, 3)} mL to achieve the desired concentration of ${toSignificantFigures(concentration, 3)} ${concentrationUnit}.`;
+                advice = `For precise measurement, prepare a ${stockConcentrationM * 1000} mM stock solution by dissolving ${toSignificantFigures(stockMassNeeded, 3)} g of the chemical in enough water to make 1 L of solution. Then dilute ${toSignificantFigures(stockVolumeNeeded, 3)} mL of this stock solution into ${toSignificantFigures(liters * 1000, 3)} mL to achieve the desired concentration of ${toSignificantFigures(concentration, 3)} ${concentrationUnit}.`;
             } else {
                 advice = "Weigh out the required mass directly.";
             }
