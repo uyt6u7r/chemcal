@@ -7,11 +7,32 @@
 </head>
 <body>
     <h1>Chemical Calculation</h1>
-    <form method="post">
-        Desired Concentration (mol/L): <input type="text" name="concentration"><br>
-        Molar Mass (g/mol): <input type="text" name="molar_mass"><br>
-        Volume (L): <input type="text" name="volume"><br>
-        <input type="submit" value="Calculate">
-    </form>
+    Desired Concentration (mol/L): <input type="number" id="concentration" step="any"><br>
+    Molar Mass (g/mol): <input type="number" id="molar_mass" step="any"><br>
+    Volume (L): <input type="number" id="volume" step="any"><br>
+    <button onclick="calculateMass()">Calculate</button>
+
+    <h2>Results</h2>
+    <p>Required mass of the chemical: <span id="required_mass"></span> grams</p>
+    <p><span id="advice"></span></p>
+
+    <script>
+        function calculateMass() {
+            var concentration = document.getElementById('concentration').value;
+            var molar_mass = document.getElementById('molar_mass').value;
+            var volume = document.getElementById('volume').value;
+
+            var required_mass = concentration * molar_mass * volume;
+            document.getElementById('required_mass').innerText = required_mass.toFixed(2);
+
+            var advice = "";
+            if (required_mass < 0.01) {
+                advice = "For precise measurement, consider diluting a higher concentration stock solution.";
+            } else {
+                advice = "Weigh out the required mass directly.";
+            }
+            document.getElementById('advice').innerText = advice;
+        }
+    </script>
 </body>
 </html>
