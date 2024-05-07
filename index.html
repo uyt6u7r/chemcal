@@ -12,9 +12,12 @@
         <option value="M">M</option>
         <option value="mM">mM</option>
         <option value="μM">μM</option>
-        <option value="kDa">kDa</option> <!-- New unit of concentration -->
     </select><br>
-    Molar Mass (g/mol or kDa): <input type="number" id="molar_mass" step="any"><br>
+    Molar Mass: <input type="number" id="molar_mass" step="any">
+    <select id="molar_mass_unit">
+        <option value="g/mol">g/mol</option>
+        <option value="kDa">kDa</option> <!-- kDa moved to Molar Mass -->
+    </select><br>
     Volume: <input type="number" id="volume" step="any">
     <select id="volume_unit">
         <option value="L">L</option>
@@ -37,15 +40,10 @@
             return shifted / magnitude;
         }
 
-        function convertConcentrationToMoles(concentration, unit, molarMass) {
+        function convertConcentrationToMoles(concentration, unit) {
             if (unit === "M") return concentration;
             else if (unit === "mM") return concentration / 1000;
             else if (unit === "μM") return concentration / 1000000;
-            else if (unit === "kDa") { // Convert kDa to M using molar mass
-                // Assuming molar mass is given in kDa, convert kDa to g/mol
-                let molarMassInGrams = molarMass * 1000; // 1 kDa = 1000 g/mol
-                return concentration / molarMassInGrams;
-            }
         }
 
         function convertVolumeToLiters(volume, unit) {
@@ -58,10 +56,16 @@
             var concentration = parseFloat(document.getElementById('concentration').value);
             var concentrationUnit = document.getElementById('concentration_unit').value;
             var molarMass = parseFloat(document.getElementById('molar_mass').value);
+            var molarMassUnit = document.getElementById('molar_mass_unit').value;
             var volume = parseFloat(document.getElementById('volume').value);
             var volumeUnit = document.getElementById('volume_unit').value;
 
-            var moles = convertConcentrationToMoles(concentration, concentrationUnit, molarMass);
+            // Convert molar mass from kDa to g/mol if necessary
+            if (molarMassUnit === "kDa") {
+                molarMass *= 1000; // 1 kDa = 1000 g/mol
+            }
+
+            var moles = convertConcentrationToMoles(concentration, concentrationUnit);
             var liters = convertVolumeToLiters(volume, volumeUnit);
             var requiredMass = moles * molarMass * liters; // mass in grams
 
