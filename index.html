@@ -7,27 +7,67 @@
 </head>
 <body>
     <h1>Chemical Calculation</h1>
-    Desired Concentration (mol/L): <input type="number" id="concentration" step="any"><br>
+    Desired Concentration: <input type="number" id="concentration" step="any">
+    <select id="concentration_unit">
+        <option value="M">M</option>
+        <option value="mM">mM</option>
+        <option value="μM">μM</option>
+    </select><br>
     Molar Mass (g/mol): <input type="number" id="molar_mass" step="any"><br>
-    Volume (L): <input type="number" id="volume" step="any"><br>
+    Volume: <input type="number" id="volume" step="any">
+    <select id="volume_unit">
+        <option value="L">L</option>
+        <option value="mL">mL</option>
+        <option value="μL">μL</option>
+    </select><br>
     <button onclick="calculateMass()">Calculate</button>
 
     <h2>Results</h2>
-    <p>Required mass of the chemical: <span id="required_mass"></span> grams</p>
+    <p>Required mass of the chemical: <span id="required_mass"></span></p>
     <p><span id="advice"></span></p>
 
     <script>
-        function calculateMass() {
-            var concentration = document.getElementById('concentration').value;
-            var molar_mass = document.getElementById('molar_mass').value;
-            var volume = document.getElementById('volume').value;
+        function convertConcentrationToMoles(concentration, unit) {
+            // Converts concentration to moles per liter
+            if (unit === "M") return concentration;
+            else if (unit === "mM") return concentration / 1000;
+            else if (unit === "μM") return concentration / 1000000;
+        }
 
-            var required_mass = concentration * molar_mass * volume;
-            document.getElementById('required_mass').innerText = required_mass.toFixed(2);
+        function convertVolumeToLiters(volume, unit) {
+            // Converts volume to liters
+            if (unit === "L") return volume;
+            else if (unit === "mL") return volume / 1000;
+            else if (unit === "μL") return volume / 1000000;
+        }
+
+        function convertMassToGrams(mass, unit) {
+            // Converts mass to grams
+            if (unit === "g") return mass;
+            else if (unit === "mg") return mass / 1000;
+            else if (unit === "μg") return mass / 1000000;
+        }
+
+        function calculateMass() {
+            var concentration = parseFloat(document.getElementById('concentration').value);
+            var concentrationUnit = document.getElementById('concentration_unit').value;
+            var molarMass = parseFloat(document.getElementById('molar_mass').value);
+            var volume = parseFloat(document.getElementById('volume').value);
+            var volumeUnit = document.getElementById('volume_unit').value;
+
+            var moles = convertConcentrationToMoles(concentration, concentrationUnit);
+            var liters = convertVolumeToLiters(volume, volumeUnit);
+
+            var requiredMass = moles * molarMass * liters; // Calculate mass in grams
+            var requiredMassOutput = requiredMass.toFixed(3) + " g";
+
+            document.getElementById('required_mass').innerText = requiredMassOutput;
 
             var advice = "";
-            if (required_mass < 0.01) {
-                advice = "For precise measurement, consider diluting a higher concentration stock solution.";
+            if (requiredMass < 0.01) { // Assuming threshold for using dilution
+                var stockConcentration = 1.0; // 1 M stock solution
+                var stockVolumeNeeded = requiredMass / (stockConcentration * molarMass) * 1000; // volume in mL needed
+                advice = `For precise measurement, dilute ${stockVolumeNeeded.toFixed(2)} mL of a 1 M stock solution into ${liters * 1000} mL total volume to achieve the desired concentration of ${concentration} ${concentrationUnit}.`;
             } else {
                 advice = "Weigh out the required mass directly.";
             }
