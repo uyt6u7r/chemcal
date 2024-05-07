@@ -27,25 +27,25 @@
     <p><span id="advice"></span></p>
 
     <script>
+        function toSignificantFigures(num, n) {
+            if (num === 0) return 0;
+            let d = Math.ceil(Math.log10(num < 0 ? -num : num));
+            let power = n - d;
+            let magnitude = Math.pow(10, power);
+            let shifted = Math.round(num * magnitude);
+            return shifted / magnitude;
+        }
+
         function convertConcentrationToMoles(concentration, unit) {
-            // Converts concentration to moles per liter
             if (unit === "M") return concentration;
             else if (unit === "mM") return concentration / 1000;
             else if (unit === "μM") return concentration / 1000000;
         }
 
         function convertVolumeToLiters(volume, unit) {
-            // Converts volume to liters
             if (unit === "L") return volume;
             else if (unit === "mL") return volume / 1000;
             else if (unit === "μL") return volume / 1000000;
-        }
-
-        function convertMassToGrams(mass, unit) {
-            // Converts mass to grams
-            if (unit === "g") return mass;
-            else if (unit === "mg") return mass / 1000;
-            else if (unit === "μg") return mass / 1000000;
         }
 
         function calculateMass() {
@@ -57,17 +57,14 @@
 
             var moles = convertConcentrationToMoles(concentration, concentrationUnit);
             var liters = convertVolumeToLiters(volume, volumeUnit);
+            var requiredMass = moles * molarMass * liters; // mass in grams
 
-            var requiredMass = moles * molarMass * liters; // Calculate mass in grams
-            var requiredMassOutput = requiredMass.toFixed(3) + " g";
-
-            document.getElementById('required_mass').innerText = requiredMassOutput;
+            document.getElementById('required_mass').innerText = toSignificantFigures(requiredMass, 3) + " g";
 
             var advice = "";
-            if (requiredMass < 0.01) { // Assuming threshold for using dilution
-                var stockConcentration = 1.0; // 1 M stock solution
-                var stockVolumeNeeded = requiredMass / (stockConcentration * molarMass) * 1000; // volume in mL needed
-                advice = `For precise measurement, dilute ${stockVolumeNeeded.toFixed(2)} mL of a 1 M stock solution into ${liters * 1000} mL total volume to achieve the desired concentration of ${concentration} ${concentrationUnit}.`;
+            if (requiredMass < 0.01) {
+                var stockVolumeNeeded = requiredMass / (1 * molarMass) * 1000; // volume in mL needed from a 1 M solution
+                advice = `For precise measurement, prepare a 1 M stock solution by dissolving ${toSignificantFigures(molarMass, 3)} g of the chemical in enough water to make 1 L of solution. Then dilute ${toSignificantFigures(stockVolumeNeeded, 3)} mL of this stock solution into ${toSignificantFigures(liters * 1000, 3)} mL to achieve the desired concentration of ${toSignificantFigures(concentration, 3)} ${concentrationUnit}.`;
             } else {
                 advice = "Weigh out the required mass directly.";
             }
